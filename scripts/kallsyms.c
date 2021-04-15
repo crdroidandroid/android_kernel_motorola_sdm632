@@ -150,8 +150,9 @@ static int read_symbol(FILE *in, struct sym_entry *s)
 		if (strcmp(sym, "__kernel_syscall_via_break") &&
 		    strcmp(sym, "__kernel_syscall_via_epc") &&
 		    strcmp(sym, "__kernel_sigtramp") &&
-		    strcmp(sym, "__gp"))
+		    strcmp(sym, "__gp")){
 			return -1;
+                    }
 
 	}
 	else if (toupper(stype) == 'U')
