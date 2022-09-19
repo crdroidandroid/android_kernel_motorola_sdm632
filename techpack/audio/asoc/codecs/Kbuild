@@ -157,6 +157,9 @@ INCS +=		$(COMMON_INC) \
 EXTRA_CFLAGS += $(INCS)
 
 
+
+subdir-ccflags-y := $(call cc-disable-warning, enum-conversion)
+
 CDEFINES +=	-DANI_LITTLE_BYTE_ENDIAN \
 		-DANI_LITTLE_BIT_ENDIAN \
 		-DDOT11F_LITTLE_ENDIAN_HOST \
