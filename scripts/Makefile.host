@@ -93,7 +93,7 @@ hostcxx_flags  = -Wp,-MD,$(depfile) $(__hostcxx_flags)
 # Compile programs on the host
 
 # Create executable from a single .c file
-# host-csingle -> Executable
+# host-csingle -> Executable https://github.com/zeelog/android_kernel_xiaomi_mido/commit/18587b92a3dd3730c4846168854fea808cb56a0e
 quiet_cmd_host-csingle 	= HOSTCC  $@
       cmd_host-csingle	= $(HOSTCC) $(hostc_flags) $(HOSTLDFLAGS) -o $@ $< \
 	  	$(HOST_LOADLIBES) $(HOSTLOADLIBES_$(@F))
