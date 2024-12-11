@@ -1,13 +1,24 @@
 #!/bin/bash
 #
 # Compile script for Supra kernel
-# Copyright (C) 2020-2021 Adithya R.
+# Copyright (C) 2020-2024 Adithya R. and Contributors
 
 SECONDS=0 # builtin bash timer
-ZIPNAME="Supra-channel-$(date '+%Y%m%d-%H%M').zip"
+SUPPORTED_DEVICES=(channel ocean river)
+
+echo -e "\nSelect the device to compile:"
+select DEVICE in "${SUPPORTED_DEVICES[@]}"; do
+    if [[ " ${SUPPORTED_DEVICES[@]} " =~ " ${DEVICE} " ]]; then
+        break
+    else
+        echo -e "\nInvalid option. Please choose again."
+    fi
+done
+
+ZIPNAME="Supra-${DEVICE}-$(date '+%Y%m%d-%H%M').zip"
 TC_DIR="$(pwd)/tc/clang-r522817"
 AK3_DIR="$(pwd)/android/AnyKernel3"
-DEFCONFIG="channel_defconfig"
+DEFCONFIG="${DEVICE}_defconfig"
 
 if test -z "$(git rev-parse --show-cdup 2>/dev/null)" &&
    head=$(git rev-parse --verify HEAD 2>/dev/null); then
@@ -27,14 +38,14 @@ fi
 if [[ $1 = "-r" || $1 = "--regen" ]]; then
 	make O=out ARCH=arm64 $DEFCONFIG savedefconfig
 	cp out/defconfig arch/arm64/configs/$DEFCONFIG
-	echo -e "\nSuccessfully regenerated defconfig at $DEFCONFIG"
+	echo -e "\nDefconfig successfully regenerated at $DEFCONFIG"
 	exit
 fi
 
 if [[ $1 = "-rf" || $1 = "--regen-full" ]]; then
 	make O=out ARCH=arm64 $DEFCONFIG
 	cp out/.config arch/arm64/configs/$DEFCONFIG
-	echo -e "\nSuccessfully regenerated full defconfig at $DEFCONFIG"
+	echo -e "\nFull defconfig successfully regenerated at $DEFCONFIG"
 	exit
 fi
 
@@ -51,21 +62,21 @@ make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld AS=llvm-as AR=llvm-ar 
 kernel="out/arch/arm64/boot/Image.gz"
 
 if [ -f "$kernel" ]; then
-	echo -e "\nKernel compiled succesfully! Zipping up...\n"
+	echo -e "\nKernel compiled successfully! Preparing zip...\n"
 	if [ -d "$AK3_DIR" ]; then
 		cp -r $AK3_DIR AnyKernel3
-	elif ! git clone -q https://github.com/Bomb-Projects/AnyKernel3 -b channel; then
-		echo -e "\nAnyKernel3 repo not found locally and couldn't clone from GitHub! Aborting..."
+	elif ! git clone -q https://github.com/Bomb-Projects/AnyKernel3 -b $DEVICE; then
+		echo -e "\nAnyKernel3 repo not found locally and failed to clone from GitHub! Aborting..."
 		exit 1
 	fi
 	cp $kernel AnyKernel3
 	rm -rf out/arch/arm64/boot
 	cd AnyKernel3
-	git checkout master &> /dev/null
+	git checkout $DEVICE &> /dev/null
 	zip -r9 "../$ZIPNAME" * -x .git README.md *placeholder
 	cd ..
 	rm -rf AnyKernel3
-	echo -e "\nCompleted in $((SECONDS / 60)) minute(s) and $((SECONDS % 60)) second(s) !"
+	echo -e "\nCompleted in $((SECONDS / 60)) minute(s) and $((SECONDS % 60)) second(s)!"
 	echo "Zip: $ZIPNAME"
 else
 	echo -e "\nCompilation failed!"
