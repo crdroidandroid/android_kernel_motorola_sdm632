@@ -1,0 +1,62 @@
+name: Supra-Kernel
+on:
+  workflow_dispatch:
+    branches:
+      - Supra-4.9.337
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out
+        uses: actions/checkout@v3
+
+      - name: Set Current Date
+        uses: szenius/set-timezone@v1.2
+        with:
+          timezoneLinux: "America/Sao_Paulo"
+
+      - name: Setting up the environment
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install gcc-aarch64-linux-gnu -y
+
+      - name: Set Build Start Time
+        id: start_time
+        run: echo "START_TIME=$(date +%s)" >> $GITHUB_ENV
+
+      - name: Run build script
+        run: |
+          ./build.sh channel
+
+      - name: Set Build End Time
+        id: end_time
+        run: echo "END_TIME=$(date +%s)" >> $GITHUB_ENV
+
+      - name: Calculate Build Duration
+        id: build_duration
+        run: |
+          start_time=$(echo "${{ env.START_TIME }}")
+          end_time=$(echo "${{ env.END_TIME }}")
+          duration=$((end_time - start_time))
+          minutes=$((duration / 60))
+          seconds=$((duration % 60))
+          echo "BUILD_DURATION=${minutes} minutos e ${seconds} segundos." >> $GITHUB_ENV
+
+      - name: Git variables
+        run: |
+          HEAD="$(git rev-parse HEAD)"
+          COMMIT_POINT="$(git log --pretty=format:'%h: %s' -1)"
+          HEAD_COMMIT="https://github.com/Bomb-Projects/kernel_motorola_sdm632/commit/$HEAD"
+          echo "COMMIT_POINT=${COMMIT_POINT}" >> $GITHUB_ENV
+          echo "HEAD_COMMIT=${HEAD_COMMIT}" >> $GITHUB_ENV
+
+      - name: Upload to Telegram
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          document: Supra-channel*.zip
+          message: |
+             Nova versão do Supra-Kernel disponível!
+             Tempo de build: ${{ env.BUILD_DURATION }}
+             Último commit: ${{ env.COMMIT_POINT }}

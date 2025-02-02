@@ -1,19 +1,24 @@
 #!/bin/bash
 #
 # Compile script for Supra kernel
-# Copyright (C) 2020-2024 Adithya R. and Contributors
+# Copyright (C) 2020-2025 Adithya R. and Contributors
 
 SECONDS=0 # builtin bash timer
 SUPPORTED_DEVICES=(channel ocean river)
 
-echo -e "\nSelect the device to compile:"
-select DEVICE in "${SUPPORTED_DEVICES[@]}"; do
-    if [[ " ${SUPPORTED_DEVICES[@]} " =~ " ${DEVICE} " ]]; then
-        break
-    else
-        echo -e "\nInvalid option. Please choose again."
-    fi
-done
+if [[ -n "$1" && " ${SUPPORTED_DEVICES[@]} " =~ " $1 " ]]; then
+    DEVICE="$1"
+    echo -e "\nDevice selected: $DEVICE"
+else
+    echo -e "\nSelect the device to compile:"
+    select DEVICE in "${SUPPORTED_DEVICES[@]}"; do
+        if [[ " ${SUPPORTED_DEVICES[@]} " =~ " ${DEVICE} " ]]; then
+            break
+        else
+            echo -e "\nInvalid option. Please choose again."
+        fi
+    done
+fi
 
 ZIPNAME="Supra-${DEVICE}-$(date '+%Y%m%d-%H%M').zip"
 TC_DIR="$(pwd)/tc/clang-r522817"
@@ -35,21 +40,21 @@ if ! [ -d "$TC_DIR" ]; then
 	fi
 fi
 
-if [[ $1 = "-r" || $1 = "--regen" ]]; then
+if [[ $2 = "-r" || $2 = "--regen" ]]; then
 	make O=out ARCH=arm64 $DEFCONFIG savedefconfig
 	cp out/defconfig arch/arm64/configs/$DEFCONFIG
 	echo -e "\nDefconfig successfully regenerated at $DEFCONFIG"
 	exit
 fi
 
-if [[ $1 = "-rf" || $1 = "--regen-full" ]]; then
+if [[ $2 = "-rf" || $2 = "--regen-full" ]]; then
 	make O=out ARCH=arm64 $DEFCONFIG
 	cp out/.config arch/arm64/configs/$DEFCONFIG
 	echo -e "\nFull defconfig successfully regenerated at $DEFCONFIG"
 	exit
 fi
 
-if [[ $1 = "-c" || $1 = "--clean" ]]; then
+if [[ $2 = "-c" || $2 = "--clean" ]]; then
 	rm -rf out
 fi
 
