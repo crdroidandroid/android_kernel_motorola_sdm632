@@ -1,8 +1,17 @@
 name: Supra-Kernel
 on:
   workflow_dispatch:
-    branches:
-      - Supra-4.9.337
+    inputs:
+      DEVICE:
+        description: 'Select the device for the build'
+        required: true
+        default: 'channel'
+        type: choice
+        options:
+          - channel
+          - ocean
+          - river
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,7 +35,7 @@ jobs:
 
       - name: Run build script
         run: |
-          ./build.sh channel
+          ./build.sh ${{ github.event.inputs.DEVICE }}
 
       - name: Set Build End Time
         id: end_time
@@ -40,23 +49,25 @@ jobs:
           duration=$((end_time - start_time))
           minutes=$((duration / 60))
           seconds=$((duration % 60))
-          echo "BUILD_DURATION=${minutes} minutos e ${seconds} segundos." >> $GITHUB_ENV
+          echo "BUILD_DURATION=${minutes} minutes and ${seconds} seconds." >> $GITHUB_ENV
 
-      - name: Git variables
+      - name: Set Device Name
+        id: device_name
         run: |
-          HEAD="$(git rev-parse HEAD)"
-          COMMIT_POINT="$(git log --pretty=format:'%h: %s' -1)"
-          HEAD_COMMIT="https://github.com/Bomb-Projects/kernel_motorola_sdm632/commit/$HEAD"
-          echo "COMMIT_POINT=${COMMIT_POINT}" >> $GITHUB_ENV
-          echo "HEAD_COMMIT=${HEAD_COMMIT}" >> $GITHUB_ENV
+          if [ "${{ github.event.inputs.DEVICE }}" == "channel" ]; then
+            echo "DEVICE_NAME=Moto G7 Play" >> $GITHUB_ENV
+          elif [ "${{ github.event.inputs.DEVICE }}" == "ocean" ]; then
+            echo "DEVICE_NAME=Moto G7 Power" >> $GITHUB_ENV
+          elif [ "${{ github.event.inputs.DEVICE }}" == "river" ]; then
+            echo "DEVICE_NAME=Moto G7" >> $GITHUB_ENV
+          fi
 
       - name: Upload to Telegram
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          document: Supra-channel*.zip
+          document: Supra-${{ github.event.inputs.DEVICE }}*.zip
           message: |
-             Nova versão do Supra-Kernel disponível!
-             Tempo de build: ${{ env.BUILD_DURATION }}
-             Último commit: ${{ env.COMMIT_POINT }}
+             New version of Supra-Kernel for device ${{ env.DEVICE_NAME }} available!
+             Build time: ${{ env.BUILD_DURATION }}
